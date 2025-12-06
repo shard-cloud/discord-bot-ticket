@@ -1,0 +1,38 @@
+{
+  "name": "discord-bot-ticket",
+  "private": true,
+  "version": "1.7.0",
+  "description": "A tickets bot for Discord",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "keywords": [
+    "node",
+    "javascript",
+    "discord",
+    "tickets"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "@discordjs/rest": "^2.6.0",
+    "better-sqlite3": "^12.4.1",
+    "discord-html-transcripts": "^3.2.0",
+    "discord.js": "^14.25.0",
+    "dotenv": "^17.2.3",
+    "moment-timezone": "^0.6.0",
+    "quick.db": "^9.1.7",
+    "yaml": "^2.8.1"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3.3.1",
+    "@eslint/js": "^9.39.1",
+    "eslint": "^9.39.1",
+    "eslint-config-prettier": "^10.1.8",
+    "globals": "^16.5.0",
+    "prettier": "^3.6.2"
+  }
+}

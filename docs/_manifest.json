@@ -1,0 +1,10 @@
+{
+  "title": "ShardCloud Template — Discord Bot Ticket",
+  "ref": "main",
+  "items": [
+    { "file": "01-introducao.md", "label": "Introdução" },
+    { "file": "02-configuracao.md", "label": "Configuração" },
+    { "file": "03-rodando.md", "label": "Executando" },
+    { "file": "04-deploy.md", "label": "Deploy" }
+  ]
+}
