@@ -7,8 +7,5 @@ node_modules/
 # Environment variables
 .env
 
-# Config file
-config.yml
-
 # Database directories
 data/

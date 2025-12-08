@@ -1,7 +1,7 @@
 const { Collection } = require("discord.js");
 require("dotenv").config({ quiet: true });
 const path = require("path");
-const { client, ticketsDB } = require("./init.js");
+const { client, ticketsDB, config } = require("./init.js");
 const {
   cleanBlacklist,
   logError,
@@ -70,17 +70,17 @@ async function autoDeleteTickets() {
   }
 }
 
-if (config.autoCloseTickets.enabled) {
+if (config?.autoCloseTickets?.enabled) {
   const autoCloseInterval = config?.autoCloseTickets?.interval || 60;
   setInterval(autoCloseTickets, autoCloseInterval * 1000);
 }
 
-if (config.autoDeleteTickets.enabled) {
+if (config?.autoDeleteTickets?.enabled) {
   const autoDeleteInterval = config?.autoDeleteTickets?.interval || 60;
   setInterval(autoDeleteTickets, autoDeleteInterval * 1000);
 }
 
-if (config.statsChannels.enabled) {
+if (config?.statsChannels?.enabled) {
   const statsInterval = parseInt(config?.statsChannels?.interval, 10) || 600;
   const statsIntervalMs = Math.max(statsInterval * 1000, 600 * 1000);
   setInterval(updateStatsChannels, statsIntervalMs);
@@ -99,7 +99,7 @@ for (const folder of commandFolders) {
   for (const file of commandFiles) {
     const command = require(`./commands/${folder}/${file}`);
     if (command.enabled) {
-      if (!config.silentStartup) {
+      if (!config?.silentStartup) {
         console.log(`The slash command [${file}] has been loaded!`);
       }
       client.commands.set(command.data.name, command);

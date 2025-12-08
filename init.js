@@ -14,8 +14,17 @@ const client = new Client({
   ],
 });
 
-const configFile = fs.readFileSync("./config.yml", "utf8");
-globalThis.config = yaml.parse(configFile);
+const configPath = path.join(__dirname, "config.yml");
+if (!fs.existsSync(configPath)) {
+  console.error(
+    `Error: config.yml not found at ${configPath}.`,
+  );
+  process.exit(1);
+}
+
+const configFile = fs.readFileSync(configPath, "utf8");
+const config = yaml.parse(configFile);
+globalThis.config = config; // Keep for backward compatibility with other files
 
 let dbPath = "";
 if (config.dbPath === undefined) {
@@ -164,4 +173,5 @@ module.exports = {
   mainDB,
   ticketsDB,
   blacklistDB,
+  config, // Export config for explicit imports
 };
