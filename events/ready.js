@@ -78,7 +78,7 @@ module.exports = {
 
           // Remove the existing slash commands if there are any
           if (removedCommands.length > 0) {
-            await Promise.all(
+            const deleteResults = await Promise.allSettled(
               removedCommands.map((command) =>
                 rest.delete(
                   useGuildCommands
@@ -95,8 +95,36 @@ module.exports = {
               ),
             );
 
-            console.log("Existing slash commands removed successfully.");
-            console.log(removedCommands.map((command) => command.name));
+            // Filter out errors for commands that don't exist (10063)
+            const successfulDeletes = [];
+            const failedDeletes = [];
+
+            deleteResults.forEach((result, index) => {
+              const command = removedCommands[index];
+              if (result.status === "fulfilled") {
+                successfulDeletes.push(command.name);
+              } else {
+                const error = result.reason;
+                // Ignore "Unknown application command" errors (10063) - command already deleted
+                if (error.code === 10063) {
+                  successfulDeletes.push(command.name);
+                } else {
+                  failedDeletes.push({ name: command.name, error });
+                }
+              }
+            });
+
+            if (successfulDeletes.length > 0) {
+              console.log("Slash commands removed successfully:");
+              console.log(successfulDeletes);
+            }
+
+            if (failedDeletes.length > 0) {
+              console.warn("Some commands could not be removed:");
+              failedDeletes.forEach(({ name, error }) => {
+                console.warn(`  - ${name}: ${error.message || error}`);
+              });
+            }
           } else {
             if (!config.silentStartup) {
               console.log("No existing slash commands to remove.");
