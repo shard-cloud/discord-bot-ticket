@@ -19,18 +19,29 @@ module.exports = {
     .setDMPermission(false),
   async execute(interaction) {
     await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+    
+    if (!process.env.CLIENT_ID) {
+      return await interaction.editReply({
+        content:
+          "Error: CLIENT_ID is not set in your .env file. Please configure it to reload commands.",
+        flags: MessageFlags.Ephemeral,
+      });
+    }
+    
     const rest = new REST({ version: "10" }).setToken(process.env.BOT_TOKEN);
-    await rest.put(
-      Routes.applicationGuildCommands(
-        process.env.CLIENT_ID,
-        process.env.GUILD_ID,
+    const useGuildCommands = !!process.env.GUILD_ID;
+    const route = useGuildCommands
+      ? Routes.applicationGuildCommands(
+          process.env.CLIENT_ID,
+          process.env.GUILD_ID,
+        )
+      : Routes.applicationCommands(process.env.CLIENT_ID);
+    
+    await rest.put(route, {
+      body: Array.from(client.commands.values()).map((command) =>
+        command.data.toJSON(),
       ),
-      {
-        body: Array.from(client.commands.values()).map((command) =>
-          command.data.toJSON(),
-        ),
-      },
-    );
+    });
     console.log(
       "All slash commands have been reloaded! Please use with caution due to rate limits.",
     );

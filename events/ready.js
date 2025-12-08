@@ -3,7 +3,7 @@ const dotenv = require("dotenv");
 dotenv.config({ quiet: true });
 const { REST } = require("@discordjs/rest");
 const { Routes } = require("discord-api-types/v10");
-const { client, mainDB } = require("../init.js");
+const { client, mainDB, config } = require("../init.js");
 const { logMessage } = require("../utils/mainUtils.js");
 
 module.exports = {
@@ -18,14 +18,35 @@ module.exports = {
       );
 
       (async () => {
-        try {
-          // Get the previously registered slash commands
-          const registeredCommands = await rest.get(
-            Routes.applicationGuildCommands(
-              process.env.CLIENT_ID,
-              process.env.GUILD_ID,
-            ),
+        // Validate CLIENT_ID before attempting to register commands
+        if (!process.env.CLIENT_ID) {
+          console.warn(
+            "Warning: CLIENT_ID not set in .env file. Slash commands will not be registered.",
           );
+          console.warn(
+            "Please set CLIENT_ID in your .env file to enable slash command registration.",
+          );
+          return;
+        }
+
+        try {
+          // Determine which route to use based on GUILD_ID
+          const useGuildCommands = !!process.env.GUILD_ID;
+          const route = useGuildCommands
+            ? Routes.applicationGuildCommands(
+                process.env.CLIENT_ID,
+                process.env.GUILD_ID,
+              )
+            : Routes.applicationCommands(process.env.CLIENT_ID);
+
+          if (!useGuildCommands) {
+            console.log(
+              "GUILD_ID not set. Using global commands (may take up to 1 hour to propagate).",
+            );
+          }
+
+          // Get the previously registered slash commands
+          const registeredCommands = await rest.get(route);
 
           const newCommands = commands.filter((command) => {
             return !registeredCommands.some((registeredCommand) => {
@@ -43,15 +64,9 @@ module.exports = {
 
           // Register the new slash commands if there are any
           if (newCommands.length > 0) {
-            await rest.put(
-              Routes.applicationGuildCommands(
-                process.env.CLIENT_ID,
-                process.env.GUILD_ID,
-              ),
-              {
-                body: commands,
-              },
-            );
+            await rest.put(route, {
+              body: commands,
+            });
 
             console.log("New slash commands registered successfully.");
             console.log(commands.map((command) => command.name));
@@ -66,11 +81,16 @@ module.exports = {
             await Promise.all(
               removedCommands.map((command) =>
                 rest.delete(
-                  Routes.applicationGuildCommand(
-                    process.env.CLIENT_ID,
-                    process.env.GUILD_ID,
-                    command.id,
-                  ),
+                  useGuildCommands
+                    ? Routes.applicationGuildCommand(
+                        process.env.CLIENT_ID,
+                        process.env.GUILD_ID,
+                        command.id,
+                      )
+                    : Routes.applicationCommand(
+                        process.env.CLIENT_ID,
+                        command.id,
+                      ),
                 ),
               ),
             );
@@ -86,14 +106,34 @@ module.exports = {
           if (error) {
             error.errorContext = `[Commands Registration Error]: an error occurred during slash command registration`;
             client.emit("error", error);
-            console.log(
-              'If you received an error saying "Unknown Application" then double check your client ID and guild ID in your .env file.',
-            );
+            
+            // Provide specific error messages based on what's missing
+            if (!process.env.CLIENT_ID) {
+              console.error(
+                "Error: CLIENT_ID is not set in your .env file.",
+              );
+              console.error(
+                "Please add CLIENT_ID=<your-bot-client-id> to your .env file.",
+              );
+            } else if (error.code === 50035 || error.message.includes("undefined")) {
+              console.error(
+                "Error: Invalid CLIENT_ID or GUILD_ID format.",
+              );
+              console.error(
+                "Please verify that CLIENT_ID and GUILD_ID (if using guild commands) are valid Discord snowflake IDs.",
+              );
+            } else {
+              console.error(
+                'If you received an error saying "Unknown Application" then double check your client ID and guild ID in your .env file.',
+              );
+            }
+            
             console.log(
               `The bot may have been invited with some missing options. Please use the link below to re-invite your bot if that is the case.`,
             );
+            const clientId = process.env.CLIENT_ID || "YOUR_CLIENT_ID";
             console.log(
-              `https://discord.com/api/oauth2/authorize?client_id=${process.env.CLIENT_ID}&permissions=268823632&scope=bot%20applications.commands`,
+              `https://discord.com/api/oauth2/authorize?client_id=${clientId}&permissions=268823632&scope=bot%20applications.commands`,
             );
           }
         }
